@@ -25,24 +25,9 @@ services:
       - postgres
     networks:
       - mynetwork
-  pgadmin:
-    image: 'docker.io/dpage/pgadmin4:latest'
-    environment:
-      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_DEFAULT_EMAIL}"
-      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_DEFAULT_PASSWORD}"
-    ports:
-      - "5050:80"
-    depends_on:
-      - postgres
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin/
-    networks:
-      - mynetwork
-
 
 networks:
   mynetwork:
 
 volumes:
   postgres_data:
-  pgadmin-data:

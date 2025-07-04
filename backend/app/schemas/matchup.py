@@ -1,12 +1,11 @@
 from pydantic import BaseModel
+from decimal import Decimal
 
 
 class Matchup(BaseModel):
     matchup_id: int
-    league_id: str
-    opp_id: str
-    result: str
-    year: int
+    sleeper_league_id: str
+    points: Decimal
     week: int
 
     class Config:

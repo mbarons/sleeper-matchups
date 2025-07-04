@@ -2,35 +2,45 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import get_db
-from app.models import LeagueModel
-from app.repositories import save_leagues_to_db
-from app.schemas import League
-from app.services import createUserLeaguesList, getUser
+from app.repositories import (
+    get_all_leagues_from_db,
+    save_leagues_to_db,
+    save_rosters_to_db,
+    save_user_to_db,
+)
+from app.schemas import League, User
+from app.services import createUserLeaguesList, getAllRosters, getUser
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
 
 
-@router.get("/{user_name}", response_model=list[League])
-async def get_leagues(user_name: str, db: Session = Depends(get_db)):
+@router.get("/{username}", response_model=list[League])
+async def get_leagues(username: str, db: Session = Depends(get_db)):
 
     try:
-        user = await getUser(user_name)
+        user: User = await getUser(username)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Erro ao buscar dados externos: {e}"
         )
 
-    existing_leagues = db.query(LeagueModel).filter_by(user_id=user.id).all()
-
-    if existing_leagues:
-        leagues = [League.model_validate(league) for league in existing_leagues]
-        return leagues
+    save_user_to_db(user, db)
 
     try:
-        leagues = await createUserLeaguesList(user.id)
-        save_leagues_to_db(user.id, leagues, db)
+        leagues = await createUserLeaguesList(user.user_id)
+        rosters = await getAllRosters(db, leagues)
+
+        save_leagues_to_db(leagues, db)
+        save_rosters_to_db(rosters, db)
         return leagues
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Erro ao buscar dados externos: {e}"
         )
+
+
+@router.get("/", response_model=list[League])
+async def get_all_leagues(db: Session = Depends(get_db)):
+    leagues_db = get_all_leagues_from_db(db)
+    leagues = [League.model_validate(user) for user in leagues_db]
+    return leagues

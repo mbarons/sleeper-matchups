@@ -1,9 +1,25 @@
-def getMatchupWeek(league_id: str, week: int):
-    URL = f"https://api.sleeper.app/v1/league/{league_id}/matchups/{week}"
-    response = requests.get(URL)
-    data = response.json()
+import httpx
+from schemas import League, Matchup
 
-    return data
+
+async def getMatchupWeek(league_id: str, week: int) -> list[Matchup] | None:
+
+    URL = f"https://api.sleeper.app/v1/league/{league_id}/matchups/{week}"
+    async with httpx.AsyncClient() as client:
+        response = await client.get(URL)
+        matchup_data = response.json()
+
+    matches = []
+
+    for m in matchup_data:
+        match = Matchup(
+            matchup_id=m["matchup_id"],
+            sleeper_league_id=league_id,
+            points=m["points"],
+            week=week,
+        )
+        matches.append(match)
+    return matches
 
 
 def getMatchupId(week_data, roster_id: int):

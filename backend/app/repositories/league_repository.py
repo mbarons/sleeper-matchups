@@ -9,7 +9,7 @@ def save_leagues_to_db(leagues: list[League], db: Session):
         # Verifica se já existe
         existing = (
             db.query(LeagueModel)
-            .filter(LeagueModel.sleeper_id == league.sleeper_league_id)
+            .filter(LeagueModel.sleeper_league_id == league.sleeper_league_id)
             .first()
         )
         if existing:
@@ -20,4 +20,13 @@ def save_leagues_to_db(leagues: list[League], db: Session):
 
 
 def get_league_by_id(db: Session, sleeper__league_id: str) -> LeagueModel | None:
-    return db.query(LeagueModel).filter(LeagueModel.sleeper_league_id == sleeper__league_id).first()
+    return (
+        db.query(LeagueModel)
+        .filter(LeagueModel.sleeper_league_id == sleeper__league_id)
+        .first()
+    )
+
+
+def get_all_leagues_from_db(db: Session) -> list[LeagueModel]:
+    leagues_list = db.query(LeagueModel).all()
+    return leagues_list
