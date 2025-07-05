@@ -5,26 +5,7 @@ import httpx
 from app.schemas import League
 
 
-async def getLeague(league_id: str):
-    URL = f"https://api.sleeper.app/v1/league/{league_id}"
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(URL)
-        league_data = response.json()
-
-    league = League(
-        sleeper_league_id=league_data["league_id"],
-        year=league_data["season"],
-        previous_league_id=league_data["previous_league_id"],
-        league_name=league_data["name"],
-        last_week=league_data["settings"]["leg"],
-    )
-    return league
-
-
 async def getLeaguesByYear(user_id: str, year: int) -> list[League]:
-
-    # TODO: se a liga tem last_week = 1, não considerar (ela não iniciou)
 
     URL = f"https://api.sleeper.app/v1/user/{user_id}/leagues/nfl/{year}"
     async with httpx.AsyncClient() as client:
@@ -34,13 +15,18 @@ async def getLeaguesByYear(user_id: str, year: int) -> list[League]:
     leagues_list = []
 
     for league_data in leagues_data:
+
         league = League(
             sleeper_league_id=league_data["league_id"],
             year=league_data["season"],
             previous_league_id=league_data["previous_league_id"],
             league_name=league_data["name"],
-            last_week=league_data["settings"]["leg"],
+            last_week=league_data.get("settings", {}).get("last_scored_leg", 0),
         )
+
+        if league.last_week == 0:
+            continue
+
         leagues_list.append(league)
 
     return leagues_list

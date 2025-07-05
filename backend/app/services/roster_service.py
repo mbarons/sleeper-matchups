@@ -1,7 +1,7 @@
 import httpx
 from sqlalchemy.orm import Session
 
-from app.repositories import get_league_by_id
+from app.repositories import get_league_by_id, get_rosters_from_league
 from app.schemas import League, Roster
 
 
@@ -16,7 +16,9 @@ async def getAllRosters(db: Session, leagues: list[League]) -> list[Roster] | No
         existing_league = get_league_by_id(db, league.sleeper_league_id)
 
         # se eu já tiver essa liga no meu banco, significa que já tenho os rosters
+        # pego direto do banco
         if existing_league is not None:
+            rosters += get_rosters_from_league(league.sleeper_league_id, db)
             continue
 
         URL = f"https://api.sleeper.app/v1/league/{league.sleeper_league_id}/rosters"

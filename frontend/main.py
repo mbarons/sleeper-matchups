@@ -72,7 +72,6 @@ if "leagues" in st.session_state:
 
     if st.button("Run!"):
         if filtered_leagues:
-
             # busca matches e salva no db
 
             matches, error = api.get_matches(filtered_leagues)
@@ -105,4 +104,5 @@ if "leagues" in st.session_state:
             )
 
             df_results = utils.get_results(user["user_id"], matches_rosters)
-            st.dataframe(df_results)
+            df_final = utils.get_final_df(df_results)
+            st.dataframe(df_final)

@@ -19,10 +19,13 @@ async def get_leagues_from_user(user_id: str):
 
     # TODO: entender o que acontece se não tiver ligas
     try:
+        print(f"Buscando ligas do usuário: {user_id}")
         leagues = await createUserLeaguesList(user_id)
+        print(f"Ligas encontradas: {leagues}")
         return leagues
 
     except Exception as e:
+        print(f"Erro ao buscar ligas: {e}")
         raise HTTPException(status_code=500, detail=f"Erro ao buscar ligas: {e}")
 
 

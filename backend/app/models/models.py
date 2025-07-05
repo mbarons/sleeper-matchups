@@ -13,6 +13,7 @@ class LogModel(Base):
     created_at = Column(DateTime(timezone=True), default=func.now())
 
 
+# TODO refatorar para last_played_week
 class LeagueModel(Base):
     __tablename__ = "leagues"
 

@@ -1,9 +1,7 @@
-from datetime import datetime
-
 import httpx
 from sqlalchemy.orm import Session
 
-from app.repositories import does_league_exists_in_matches
+from app.repositories import does_league_exists_in_matches, get_matches_from_league
 from app.schemas import League, Matchup
 
 
@@ -37,11 +35,11 @@ async def getMatchupWeek(league: League, week: int) -> list[Matchup] | None:
 
 async def getAllMatchesFromLeague(league: League, db: Session) -> list[Matchup] | None:
 
-    # se já existir e não for desse ano, passa (se for desse ano, precisamos atualizar)
+    # se já existir, pega do db
     exist = does_league_exists_in_matches(league.sleeper_league_id, db)
 
-    if exist and league.year != datetime.now().year:
-        return None
+    if exist:
+        return get_matches_from_league(league.sleeper_league_id, db)
 
     matches = []
 

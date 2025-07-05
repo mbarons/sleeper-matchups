@@ -1,6 +1,7 @@
 # utils.py
 """Funções auxiliares"""
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -101,4 +102,40 @@ def get_results(user_id: str, matches_df: pd.DataFrame):
         }
     )
 
+    # força pontos numéricos
+    results_final["user_points"] = pd.to_numeric(
+        results_final["user_points"], errors="coerce"
+    )
+    results_final["opp_points"] = pd.to_numeric(
+        results_final["opp_points"], errors="coerce"
+    )
+
+    # Dropar linhas onde ambos os pontos são 0
+    results_final = results_final[
+        ~((results_final["user_points"] == 0) & (results_final["opp_points"] == 0))
+    ]
+
+    # Criar coluna "result" baseada na comparação dos pontos
+    results_final["result"] = np.where(
+        results_final["user_points"] > results_final["opp_points"],
+        "W",
+        np.where(results_final["user_points"] == results_final["opp_points"], "T", "L"),
+    )
+
     return results_final
+
+
+def get_final_df(results_df: pd.DataFrame):
+
+    results_df["my_wins"] = (results_df["result"] == "W").astype(int)
+    results_df["my_losses"] = (results_df["result"] == "L").astype(int)
+    results_df["ties"] = (results_df["result"] == "T").astype(int)
+
+    agg_df = (
+        results_df.groupby("opp_id")[["my_wins", "my_losses", "ties"]]
+        .sum()
+        .reset_index()
+    )
+    agg_df["total_games"] = agg_df["my_wins"] + agg_df["my_losses"] + agg_df["ties"]
+
+    return agg_df
