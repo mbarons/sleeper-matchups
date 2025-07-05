@@ -22,7 +22,6 @@ class LeagueModel(Base):
     year = Column(Integer)
     league_name = Column(String)
     last_week = Column(Integer)
-    group_id = Column(Integer)
 
 
 class RosterModel(Base):

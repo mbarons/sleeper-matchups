@@ -13,6 +13,24 @@ def show_dataframe(data, title):
         st.dataframe(df)
 
 
+def keep_lastest_league_in_group(leagues: list[dict]):
+    """
+    recebe uma lista de ligas com groupid, e retorna uma lista com apenas as ligas de maior ano por groupid
+    """
+    best_by_groupid = {}
+
+    for league in leagues:
+        group_id = league["group_id"]
+
+        if (
+            group_id not in best_by_groupid
+            or league["year"] > best_by_groupid[group_id]["year"]
+        ):
+            best_by_groupid[group_id] = league
+
+    return list(best_by_groupid.values())
+
+
 def process_leagues_dataframe(leagues_data):
     """Processa dados das ligas e cria DataFrame com group_id"""
     df = pd.DataFrame(leagues_data)

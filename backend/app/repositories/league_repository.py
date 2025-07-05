@@ -14,7 +14,7 @@ def save_leagues_to_db(leagues: list[League], db: Session):
         )
         if existing:
             continue  # já existe, pula
-        league_db = LeagueModel(**league.model_dump())
+        league_db = LeagueModel(**league.model_dump(exclude={"group_id"}))
         db.add(league_db)
     db.commit()
 

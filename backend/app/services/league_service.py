@@ -63,4 +63,29 @@ async def createUserLeaguesList(user_id: str) -> list[League] | None:
             user_leagues.append(league)
         year += 1
         leagues_list_by_year = await getLeaguesByYear(user_id, current_year - year)
-    return user_leagues
+
+    leagues_with_group_id = process_leagues_groupid(user_leagues)
+
+    return leagues_with_group_id
+
+
+def process_leagues_groupid(leagues: list[League]):
+    """essa função recebe uma lista de ligas sem group ids e devolve a lista com group ids"""
+
+    sorted_leagues = sorted(leagues, key=lambda x: x.year, reverse=True)
+
+    visiteds: list[League] = []
+    group_id = 0
+
+    for league in reversed(sorted_leagues):
+        for previous in visiteds:
+            if league.previous_league_id == previous.sleeper_league_id:
+                league.group_id = previous.group_id
+                visiteds.append(league)
+                break
+        else:  # esse else é do for... só executa se o for não encontrar o break.
+            group_id += 1
+            league.group_id = group_id
+            visiteds.append(league)
+
+    return sorted_leagues
