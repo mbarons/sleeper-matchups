@@ -46,5 +46,8 @@ class MatchupModel(Base):
     __tablename__ = "matches"
     id = Column(Integer, primary_key=True, autoincrement=True)
     sleeper_league_id = Column(String)
+    matchup_id = Column(Integer)
+    roster_id = Column(Integer)
     points = Column(Numeric(10, 2))
+    year = Column(Integer)
     week = Column(Integer)

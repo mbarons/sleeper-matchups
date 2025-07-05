@@ -5,11 +5,17 @@ from app import get_db
 from app.repositories import (
     get_all_leagues_from_db,
     save_leagues_to_db,
+    save_matches_to_db,
     save_rosters_to_db,
     save_user_to_db,
 )
 from app.schemas import League, User
-from app.services import createUserLeaguesList, getAllRosters, getUser
+from app.services import (
+    createUserLeaguesList,
+    getAllMatchesFromLeague,
+    getAllRosters,
+    getUser,
+)
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
 
@@ -28,10 +34,27 @@ async def get_leagues(username: str, db: Session = Depends(get_db)):
 
     try:
         leagues = await createUserLeaguesList(user.user_id)
-        rosters = await getAllRosters(db, leagues)
+        matches_list = []
+        rosters = []
 
-        save_leagues_to_db(leagues, db)
-        save_rosters_to_db(rosters, db)
+        if leagues:
+            for league in leagues:
+                matches = await getAllMatchesFromLeague(league, db)
+                if matches:
+                    matches_list.extend(matches)
+
+        # rosters deve buscar primeiro, pq ele vai conferir se as ligas estão no banco,
+        # se salvar as ligas primeiro, não vai buscar.
+        if leagues:
+            rosters = await getAllRosters(db, leagues)
+            save_leagues_to_db(leagues, db)
+
+        if rosters:
+            save_rosters_to_db(rosters, db)
+        if matches_list:
+            print(matches_list)
+            save_matches_to_db(db, matches_list)
+
         return leagues
     except Exception as e:
         raise HTTPException(

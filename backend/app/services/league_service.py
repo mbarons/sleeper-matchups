@@ -43,7 +43,7 @@ async def getLeaguesByYear(user_id: str, year: int) -> list[League]:
     return leagues_list
 
 
-async def createUserLeaguesList(user_id: str) -> list[League]:
+async def createUserLeaguesList(user_id: str) -> list[League] | None:
     current_year = datetime.now().year
     leagues_list_by_year = await getLeaguesByYear(user_id, current_year)
     user_leagues = []
