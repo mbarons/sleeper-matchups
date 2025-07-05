@@ -1,4 +1,5 @@
 import api
+import pandas as pd
 import streamlit as st
 import utils
 
@@ -6,6 +7,9 @@ import utils
 username = st.text_input("Sleeper username:")
 
 # botão de envio
+
+user = {}
+
 if st.button("Send!"):
     if not username:
         st.warning("Please insert an username.")
@@ -64,6 +68,8 @@ if "leagues" in st.session_state:
 
     utils.show_dataframe(filtered_leagues, "Ligas filtradas")
 
+    matches, rosters = [], []
+
     if st.button("Run!"):
         if filtered_leagues:
 
@@ -88,3 +94,15 @@ if "leagues" in st.session_state:
                 st.success("Leagues saved to database!")
             else:
                 st.error(f"Erro ao salvar ligas! {error}")
+
+        user = st.session_state["user"]
+        if matches and rosters and user:
+            matches_df = pd.DataFrame(matches)
+            rosters_df = pd.DataFrame(rosters)
+
+            matches_rosters = matches_df.merge(
+                rosters_df, on=["sleeper_league_id", "roster_id"], how="left"
+            )
+
+            df_results = utils.get_results(user["user_id"], matches_rosters)
+            st.dataframe(df_results)

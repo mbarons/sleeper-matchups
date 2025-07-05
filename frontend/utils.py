@@ -68,3 +68,37 @@ def get_league_names(df):
         .sort_values("group_id")["league_name"]
         .tolist()
     )
+
+
+def get_results(user_id: str, matches_df: pd.DataFrame):
+    user_matches = matches_df[matches_df["user_id"] == user_id]
+
+    results = pd.merge(
+        user_matches,
+        matches_df,
+        on=["sleeper_league_id", "matchup_id", "week"],
+        suffixes=("_user", "_opp"),
+    )
+
+    results = results[results["user_id_user"] != results["user_id_opp"]]
+
+    results_final = results[
+        [
+            "sleeper_league_id",
+            "matchup_id",
+            "week",
+            "user_id_user",
+            "points_user",
+            "user_id_opp",
+            "points_opp",
+        ]
+    ].rename(
+        columns={
+            "user_id_user": "user_id",
+            "points_user": "user_points",
+            "user_id_opp": "opp_id",
+            "points_opp": "opp_points",
+        }
+    )
+
+    return results_final
