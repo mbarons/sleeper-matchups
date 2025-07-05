@@ -23,6 +23,9 @@ async def getLeague(league_id: str):
 
 
 async def getLeaguesByYear(user_id: str, year: int) -> list[League]:
+
+    # TODO: se a liga tem last_week = 1, não considerar (ela não iniciou)
+
     URL = f"https://api.sleeper.app/v1/user/{user_id}/leagues/nfl/{year}"
     async with httpx.AsyncClient() as client:
         response = await client.get(URL)
