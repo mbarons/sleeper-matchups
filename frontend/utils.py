@@ -72,6 +72,9 @@ def get_league_names(df):
 
 
 def get_results(user_id: str, matches_df: pd.DataFrame):
+    """
+    Cria o df junta as partidas entre os dois jogadores, e define o vencedor
+    """
     user_matches = matches_df[matches_df["user_id"] == user_id]
 
     results = pd.merge(
@@ -126,6 +129,9 @@ def get_results(user_id: str, matches_df: pd.DataFrame):
 
 
 def get_final_df(results_df: pd.DataFrame):
+    """
+    Cria df com record histórico por oponente.
+    """
 
     results_df["my_wins"] = (results_df["result"] == "W").astype(int)
     results_df["my_losses"] = (results_df["result"] == "L").astype(int)

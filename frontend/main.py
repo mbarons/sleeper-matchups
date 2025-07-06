@@ -87,6 +87,8 @@ if "leagues" in st.session_state:
             else:
                 st.error(f"Erro ao buscar rosters! {error}")
 
+            # buscar users e salva no db
+
             # salva ligas no db
             success, error = api.save_leagues(filtered_leagues)
             if success:

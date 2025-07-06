@@ -16,6 +16,12 @@ def save_user_to_db(user: User, db: Session):
     db.commit()
 
 
-def get_all_users_from_db(db: Session):
+def get_all_users_from_db(db: Session) -> list[UserModel]:
     users_list = db.query(UserModel).all()
     return users_list
+
+
+def get_user_from_db(user_id: str, db: Session) -> UserModel | None:
+    user_db = db.query(UserModel).filter(UserModel.user_id == user_id).first()
+
+    return user_db

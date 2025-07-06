@@ -1,7 +1,7 @@
 import httpx
 from sqlalchemy.orm import Session
 
-from app.repositories import does_league_exists_in_matches, get_matches_from_league
+from app.repositories import get_league_last_played_week, get_matches_from_league
 from app.schemas import League, Matchup
 
 
@@ -36,14 +36,20 @@ async def getMatchupWeek(league: League, week: int) -> list[Matchup] | None:
 async def getAllMatchesFromLeague(league: League, db: Session) -> list[Matchup] | None:
 
     # se já existir, pega do db
-    exist = does_league_exists_in_matches(league.sleeper_league_id, db)
+    last_played_week = get_league_last_played_week(league.sleeper_league_id, db)
 
-    if exist:
+    # se a last week do db for igual a da liga, já temos todas as partidas
+    if last_played_week == league.last_week:
         return get_matches_from_league(league.sleeper_league_id, db)
+
+    # se last week do db for diferente da api, significa que não temos todas as semanas
+    # precisamos iterar a partir daquela semana
+    # caso não tenha a liga, a função vai retornar 0, e pegaremos todos as semanas.
+    i = last_played_week + 1
 
     matches = []
 
-    for w in range(1, league.last_week + 1):
+    for w in range(i, league.last_week + 1):
         week = await getMatchupWeek(league, w)
 
         if week is None:
