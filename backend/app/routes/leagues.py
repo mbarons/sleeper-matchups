@@ -2,35 +2,40 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import get_db
-from app.models import LeagueModel
-from app.repositories import save_leagues_to_db
+from app.repositories import (
+    get_all_leagues_from_db,
+    save_leagues_to_db,
+)
 from app.schemas import League
-from app.services import createUserLeaguesList, getUser
+from app.services import (
+    createUserLeaguesList,
+)
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
 
 
-@router.get("/{user_name}", response_model=list[League])
-async def get_leagues(user_name: str, db: Session = Depends(get_db)):
+@router.get("/{user_id}", response_model=list[League])
+async def get_leagues_from_user(user_id: str):
 
+    # TODO: entender o que acontece se não tiver ligas
     try:
-        user = await getUser(user_name)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Erro ao buscar dados externos: {e}"
-        )
-
-    existing_leagues = db.query(LeagueModel).filter_by(user_id=user.id).all()
-
-    if existing_leagues:
-        leagues = [League.model_validate(league) for league in existing_leagues]
+        print(f"Buscando ligas do usuário: {user_id}")
+        leagues = await createUserLeaguesList(user_id)
+        print(f"Ligas encontradas: {leagues}")
         return leagues
 
-    try:
-        leagues = await createUserLeaguesList(user.id)
-        save_leagues_to_db(user.id, leagues, db)
-        return leagues
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Erro ao buscar dados externos: {e}"
-        )
+        print(f"Erro ao buscar ligas: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar ligas: {e}")
+
+
+@router.get("/", response_model=list[League])
+async def get_all_leagues(db: Session = Depends(get_db)):
+    leagues_db = get_all_leagues_from_db(db)
+    leagues = [League.model_validate(user) for user in leagues_db]
+    return leagues
+
+
+@router.post("/")
+async def save_leagues(leagues: list[League], db: Session = Depends(get_db)):
+    save_leagues_to_db(leagues, db)

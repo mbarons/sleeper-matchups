@@ -5,24 +5,8 @@ import httpx
 from app.schemas import League
 
 
-async def getLeague(league_id: str):
-    URL = f"https://api.sleeper.app/v1/league/{league_id}"
+async def getLeaguesByYear(user_id: str, year: int) -> list[League]:
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(URL)
-        league_data = response.json()
-
-    league = League(
-        id=league_data["league_id"],
-        year=league_data["season"],
-        previous_league_id=league_data["previous_league_id"],
-        league_name=league_data["name"],
-        last_week=league_data["settings"]["leg"],
-    )
-    return league
-
-
-async def getLeaguesByYear(user_id: str, year: int):
     URL = f"https://api.sleeper.app/v1/user/{user_id}/leagues/nfl/{year}"
     async with httpx.AsyncClient() as client:
         response = await client.get(URL)
@@ -31,69 +15,63 @@ async def getLeaguesByYear(user_id: str, year: int):
     leagues_list = []
 
     for league_data in leagues_data:
+
         league = League(
-            id=league_data["league_id"],
+            sleeper_league_id=league_data["league_id"],
             year=league_data["season"],
             previous_league_id=league_data["previous_league_id"],
             league_name=league_data["name"],
-            last_week=league_data["settings"]["leg"],
+            last_week=league_data.get("settings", {}).get("last_scored_leg", 0),
         )
+
+        if league.last_week == 0:
+            continue
+
         leagues_list.append(league)
 
     return leagues_list
 
 
-async def getRosterId(user_id: str, league_id: str):
-    URL = f"https://api.sleeper.app/v1/league/{league_id}/rosters"
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(URL)
-        league_data = response.json()
-
-    for roster in league_data:
-        if roster["owner_id"] == user_id:
-            return roster["roster_id"]
-
-
-async def createUserLeaguesList(user_id: str):
+async def createUserLeaguesList(user_id: str) -> list[League] | None:
     current_year = datetime.now().year
     leagues_list_by_year = await getLeaguesByYear(user_id, current_year)
-    unique_league_ids = []
     user_leagues = []
 
-    group = 1
     year = 0
 
     while (current_year - year) >= 2015:
+
+        if leagues_list_by_year is None:
+            year += 1
+            pass
+
         for league in leagues_list_by_year:
-            if league.id in unique_league_ids:
-                continue
-            unique_league_ids.append(league.id)
-            roster_id = await getRosterId(user_id, league.id)
-
-            league.roster_id = roster_id
-            league.group_id = group
             user_leagues.append(league)
-
-            previous_league_id = league.previous_league_id
-
-            while previous_league_id not in (None, "0"):
-                l = await getLeague(previous_league_id)
-
-                if l.id in unique_league_ids:
-                    previous_league_id = l.previous_league_id
-                    continue
-                unique_league_ids.append(l.id)
-
-                roster_id = await getRosterId(user_id, l.id)
-                l.roster_id = roster_id
-                l.group_id = group
-
-                user_leagues.append(l)
-
-                previous_league_id = l.previous_league_id
-
-            group += 1
         year += 1
         leagues_list_by_year = await getLeaguesByYear(user_id, current_year - year)
-    return user_leagues
+
+    leagues_with_group_id = process_leagues_groupid(user_leagues)
+
+    return leagues_with_group_id
+
+
+def process_leagues_groupid(leagues: list[League]):
+    """essa função recebe uma lista de ligas sem group ids e devolve a lista com group ids"""
+
+    sorted_leagues = sorted(leagues, key=lambda x: x.year, reverse=True)
+
+    visiteds: list[League] = []
+    group_id = 0
+
+    for league in reversed(sorted_leagues):
+        for previous in visiteds:
+            if league.previous_league_id == previous.sleeper_league_id:
+                league.group_id = previous.group_id
+                visiteds.append(league)
+                break
+        else:  # esse else é do for... só executa se o for não encontrar o break.
+            group_id += 1
+            league.group_id = group_id
+            visiteds.append(league)
+
+    return sorted_leagues

@@ -1,3 +1,3 @@
-from .models import LeagueModel
+from .models import LeagueModel, MatchupModel, RosterModel, UserModel
 
-__all__ = ['LeagueModel']
+__all__ = ["LeagueModel", "RosterModel", "UserModel", "MatchupModel"]

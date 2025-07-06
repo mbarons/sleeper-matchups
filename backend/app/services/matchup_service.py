@@ -1,39 +1,55 @@
-def getMatchupWeek(league_id: str, week: int):
-    URL = f"https://api.sleeper.app/v1/league/{league_id}/matchups/{week}"
-    response = requests.get(URL)
-    data = response.json()
+import httpx
+from sqlalchemy.orm import Session
 
-    return data
-
-
-def getMatchupId(week_data, roster_id: int):
-    for match in week_data:
-        if match["roster_id"] == roster_id:
-            return match["matchup_id"]
+from app.repositories import does_league_exists_in_matches, get_matches_from_league
+from app.schemas import League, Matchup
 
 
-def getOpponent(week_data, matchup_id: int, roster_id: int):
-    for match in week_data:
-        if match["matchup_id"] == matchup_id and match["roster_id"] != roster_id:
-            return match["roster_id"]
+async def getMatchupWeek(league: League, week: int) -> list[Matchup] | None:
+
+    URL = (
+        f"https://api.sleeper.app/v1/league/{league.sleeper_league_id}/matchups/{week}"
+    )
+    async with httpx.AsyncClient() as client:
+        response = await client.get(URL)
+        matchup_data = response.json()
+
+    matches = []
+
+    for m in matchup_data:
+
+        if m["matchup_id"] is None:
+            continue
+
+        match = Matchup(
+            matchup_id=m["matchup_id"],
+            sleeper_league_id=league.sleeper_league_id,
+            roster_id=m["roster_id"],
+            points=m["points"],
+            year=league.year,
+            week=week,
+        )
+        matches.append(match)
+    return matches
 
 
-def getPoints(week_data, roster_id: int):
-    for match in week_data:
-        if match["roster_id"] == roster_id:
-            return match["points"]
+async def getAllMatchesFromLeague(league: League, db: Session) -> list[Matchup] | None:
 
+    # se já existir, pega do db
+    exist = does_league_exists_in_matches(league.sleeper_league_id, db)
 
-def getOppUserId(roster_id: int, league_id: str):
-    for roster in rosters:
-        if roster[0] == league_id and roster[2] == roster_id:
-            return roster[1]
+    if exist:
+        return get_matches_from_league(league.sleeper_league_id, db)
 
+    matches = []
 
-def defineMatchup(week_data, week: int, league: League):
-    # achar meu matchup_id com base no meu roster id
-    matchup_id = findMatchupId(week_data, league.roster_id)
-    print(f"matchup: {matchup_id}")
+    for w in range(1, league.last_week + 1):
+        week = await getMatchupWeek(league, w)
 
-    if matchup_id is None:
-        return None
+        if week is None:
+            continue
+
+        for m in week:
+            matches.append(m)
+
+    return matches
