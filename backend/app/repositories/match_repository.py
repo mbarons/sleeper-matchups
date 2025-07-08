@@ -10,6 +10,8 @@ def get_matches_from_league(league_id: str, db: Session) -> list[Matchup]:
     )
 
     matches = [Matchup.model_validate(match) for match in matches_db]
+    for match in matches:
+        match.is_new = False
     return matches
 
 
@@ -27,6 +29,6 @@ def save_matches_to_db(db: Session, matches: list[Matchup]):
             .first()
         )
         if not existing:
-            match_db = MatchupModel(**match.model_dump())
+            match_db = MatchupModel(**match.model_dump(exclude={"is_new"}))
             db.add(match_db)
     db.commit()

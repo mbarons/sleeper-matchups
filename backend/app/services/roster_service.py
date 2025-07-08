@@ -3,9 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.repositories import get_league_by_id, get_rosters_from_league
 from app.schemas import League, Roster
+from app.services.utils import medir_tempo_async
 
 
-async def getAllRosters(db: Session, leagues: list[League]) -> list[Roster] | None:
+@medir_tempo_async
+async def getAllRosters(db: Session, leagues: list[League]) -> list[Roster]:
     ## de-para roster_id, owner_id por liga
 
     rosters: list[Roster] = []
@@ -16,7 +18,7 @@ async def getAllRosters(db: Session, leagues: list[League]) -> list[Roster] | No
         existing_league = get_league_by_id(db, league.sleeper_league_id)
 
         # se eu já tiver essa liga no meu banco, significa que já tenho os rosters
-        # pego direto do banco
+        # pego direto do banco (os do banco vem com atributo is_new = False)
         if existing_league is not None:
             rosters += get_rosters_from_league(league.sleeper_league_id, db)
             continue

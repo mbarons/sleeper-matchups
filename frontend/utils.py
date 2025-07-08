@@ -32,36 +32,6 @@ def keep_lastest_league_in_group(leagues: list[dict]):
     return list(best_by_groupid.values())
 
 
-def process_leagues_dataframe(leagues_data):
-    """Processa dados das ligas e cria DataFrame com group_id"""
-    df = pd.DataFrame(leagues_data)
-
-    processed = {}
-    current_group_id = 1
-
-    for idx in reversed(df.index):
-        row = df.loc[idx]
-        league_id = row["sleeper_league_id"]
-        prev_id = row["previous_league_id"]
-
-        if idx == df.index[-1]:
-            # Primeira linha da iteração (última do df)
-            df.at[idx, "group_id"] = current_group_id
-            processed[league_id] = current_group_id
-        else:
-            if prev_id in processed:
-                # copia o group_id do previous_league_id
-                df.at[idx, "group_id"] = processed[prev_id]
-                processed[league_id] = processed[prev_id]
-            else:
-                # novo group_id incremental
-                current_group_id += 1
-                df.at[idx, "group_id"] = current_group_id
-                processed[league_id] = current_group_id
-
-    return df
-
-
 def get_league_names(df):
     """Extrai nomes das ligas do DataFrame processado"""
     return (
@@ -126,22 +96,3 @@ def get_results(user_id: str, matches_df: pd.DataFrame):
     )
 
     return results_final
-
-
-def get_final_df(results_df: pd.DataFrame):
-    """
-    Cria df com record histórico por oponente.
-    """
-
-    results_df["my_wins"] = (results_df["result"] == "W").astype(int)
-    results_df["my_losses"] = (results_df["result"] == "L").astype(int)
-    results_df["ties"] = (results_df["result"] == "T").astype(int)
-
-    agg_df = (
-        results_df.groupby("opp_id")[["my_wins", "my_losses", "ties"]]
-        .sum()
-        .reset_index()
-    )
-    agg_df["total_games"] = agg_df["my_wins"] + agg_df["my_losses"] + agg_df["ties"]
-
-    return agg_df

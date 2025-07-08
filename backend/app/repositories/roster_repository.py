@@ -5,17 +5,11 @@ from app.schemas import Roster
 
 
 def save_rosters_to_db(rosters: list[Roster], db: Session):
+    # só adiciona se for new
     for r in rosters:
-        exists = (
-            db.query(RosterModel)
-            .filter_by(sleeper_league_id=r.sleeper_league_id, roster_id=r.roster_id)
-            .first()
-        )
-
-        if not exists:
-            new_roster = RosterModel(**r.model_dump())
-            db.add(new_roster)
-
+        if r.is_new:
+            r_db = RosterModel(**r.model_dump(exclude={"is_new"}))
+            db.add(r_db)
     db.commit()
 
 
@@ -30,4 +24,6 @@ def get_rosters_from_league(league_id: str, db: Session) -> list[Roster]:
     )
 
     rosters = [Roster.model_validate(roster) for roster in rosters_db]
+    for r in rosters:
+        r.is_new = False
     return rosters

@@ -1,5 +1,4 @@
 import api
-import pandas as pd
 import streamlit as st
 import utils
 
@@ -14,20 +13,18 @@ if st.button("Send!"):
     if not username:
         st.warning("Please insert an username.")
     else:
-        user, error = api.get_user(username)
+        response, error = api.get_leagues(username)
 
-        if user:
+        if response:
+            user = response["user"]
+            leagues = response["leagues"]
+
             st.session_state["user"] = user
             st.session_state["user_id"] = user["user_id"]
+            st.session_state["leagues"] = leagues
 
-            leagues, error = api.get_leagues(user["user_id"])
-            if leagues:
-                st.session_state["leagues"] = leagues
-                st.success("Leagues loaded!")
-            else:
-                st.error(f"Erro ao buscar ligas! {error}")
         else:
-            st.error(f"Erro ao buscar usuário! {error}")
+            st.error(f"Erro ao buscar dados! {error}")
 
 # Após carregamento bem-sucedido
 if "leagues" in st.session_state:
@@ -68,43 +65,19 @@ if "leagues" in st.session_state:
 
     utils.show_dataframe(filtered_leagues, "Ligas filtradas")
 
-    matches, rosters = [], []
-
-    if st.button("Run!"):
-        if filtered_leagues:
-            # busca matches e salva no db
-
-            matches, error = api.get_matches(filtered_leagues)
-            if matches:
-                st.success("Matches found!")
-            else:
-                st.error(f"Erro ao buscar partidas! {error}")
-
-            # busca rosters e salva no db
-            rosters, error = api.get_rosters(filtered_leagues)
-            if rosters:
-                st.success("Rosters found!")
-            else:
-                st.error(f"Erro ao buscar rosters! {error}")
-
-            # buscar users e salva no db
-
-            # salva ligas no db
-            success, error = api.save_leagues(filtered_leagues)
-            if success:
-                st.success("Leagues saved to database!")
-            else:
-                st.error(f"Erro ao salvar ligas! {error}")
-
-        user = st.session_state["user"]
-        if matches and rosters and user:
-            matches_df = pd.DataFrame(matches)
-            rosters_df = pd.DataFrame(rosters)
-
-            matches_rosters = matches_df.merge(
-                rosters_df, on=["sleeper_league_id", "roster_id"], how="left"
+    if filtered_leagues:
+        if st.button("Run!"):
+            response, error = api.process_results(
+                st.session_state["user_id"], filtered_leagues
             )
 
-            df_results = utils.get_results(user["user_id"], matches_rosters)
-            df_final = utils.get_final_df(df_results)
-            st.dataframe(df_final)
+            if error:
+                st.error(f"Erro: {error}")
+            elif response:
+                for line in response:
+                    st.write(
+                        f"{st.session_state['user']['username']} | {line['my_wins']} | - | {line['my_losses']} | {line['username']}"
+                    )
+
+            else:
+                st.error("Erro na resposta da API.")

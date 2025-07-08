@@ -10,6 +10,7 @@ class Matchup(BaseModel):
     points: Decimal
     year: int
     week: int
+    is_new: bool = True
 
     class Config:
         from_attributes = True

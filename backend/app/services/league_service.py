@@ -3,8 +3,10 @@ from datetime import datetime
 import httpx
 
 from app.schemas import League
+from app.services.utils import medir_tempo, medir_tempo_async
 
 
+@medir_tempo_async
 async def getLeaguesByYear(user_id: str, year: int) -> list[League]:
 
     URL = f"https://api.sleeper.app/v1/user/{user_id}/leagues/nfl/{year}"
@@ -32,7 +34,8 @@ async def getLeaguesByYear(user_id: str, year: int) -> list[League]:
     return leagues_list
 
 
-async def createUserLeaguesList(user_id: str) -> list[League] | None:
+@medir_tempo_async
+async def createUserLeaguesList(user_id: str) -> list[League]:
     current_year = datetime.now().year
     leagues_list_by_year = await getLeaguesByYear(user_id, current_year)
     user_leagues = []
@@ -55,6 +58,7 @@ async def createUserLeaguesList(user_id: str) -> list[League] | None:
     return leagues_with_group_id
 
 
+@medir_tempo
 def process_leagues_groupid(leagues: list[League]):
     """essa função recebe uma lista de ligas sem group ids e devolve a lista com group ids"""
 

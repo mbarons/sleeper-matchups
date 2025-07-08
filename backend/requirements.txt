@@ -3,3 +3,5 @@ uvicorn
 SQLAlchemy
 psycopg2-binary
 httpx
+numpy
+pandas
